@@ -54,7 +54,6 @@ def generateForAll(conn,dbName,folderName):
     merge(conn,tables,folderName,0,len(tables)-1,table_idx,threads)
     for thread in threads:
         thread.join()
-    e = time.time()
 
 #generate for one
 def generateForParticular(conn,TableName):
