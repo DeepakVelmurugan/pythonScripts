@@ -1,6 +1,7 @@
 #python
 import pyodbc #for mssql connection with python
-from threading import Thread #for threading
+from threading import Thread #for thread
+import time
 #connect db
 conn = pyodbc.connect('Driver={SQL Server};'
                       'Server=USBLRVDEEPAK1;'
@@ -25,25 +26,35 @@ def read(conn,table,folderName):
             file.write("|".join((str(i) for i in row))+'\n')
 
 #divide and conquer
-def merge(conn,tables,folderName,left,right,table_idx):
+def merge(conn,tables,folderName,left,right,table_idx,threads):
     if abs(left-right) == 1 and (left not in table_idx) and (right not in table_idx):
         table_idx.add(left)
         table_idx.add(right)
-        Thread(target = read(conn,tables[left],folderName)).start()
-        Thread(target = read(conn,tables[right],folderName)).start()
+        t = Thread(target = read(conn,tables[left],folderName))
+        t.start()
+        threads.append(t)
+        t = Thread(target = read(conn,tables[right],folderName))
+        t.start()
+        threads.append(t)
     if left == right and (left not in table_idx):
         table_idx.add(left)
-        Thread(target = read(conn,tables[left],folderName)).start()
+        t = Thread(target = read(conn,tables[left],folderName))
+        t.start()
+        threads.append(t)
     if left<right:
         mid = (left + right)//2
-        merge(conn,tables,folderName,left,mid,table_idx)
-        merge(conn,tables,folderName,mid+1,right,table_idx)
+        merge(conn,tables,folderName,left,mid,table_idx,threads)
+        merge(conn,tables,folderName,mid+1,right,table_idx,threads)
 
 #generate for all TABLES
 def generateForAll(conn,dbName,folderName):
     tables = list_of_tables(conn,dbName)
     table_idx = set()
-    merge(conn,tables,folderName,0,len(tables)-1,table_idx)
+    threads = []
+    merge(conn,tables,folderName,0,len(tables)-1,table_idx,threads)
+    for thread in threads:
+        thread.join()
+    e = time.time()
 
 #generate for one
 def generateForParticular(conn,TableName):
