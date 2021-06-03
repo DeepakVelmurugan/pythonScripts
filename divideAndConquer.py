@@ -8,11 +8,18 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Database=dbTemp;'
                       'Trusted_Connection=yes;')
 #get table names
-def list_of_tables(conn,dbName):
-    cursor = conn.cursor()
-    statement = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG='" + dbName +"'"
-    tables = cursor.execute(statement)
-    return [table[0] for table in tables]
+def list_of_tables(conn,dbName,howMany):
+    try:
+        cursor = conn.cursor()
+        if howMany == 'ALL':
+            statement = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG='" + dbName +"'"
+        else:
+            statement = "SELECT TOP " + howMany + " TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG='" + dbName +"'"
+        tables = cursor.execute(statement)
+        return [table[0] for table in tables]
+    except:
+        print("Specify input correctly")
+        raise
 
 #read the rows
 def read(conn,table,folderName):
@@ -22,8 +29,7 @@ def read(conn,table,folderName):
     filename = folderName+'/'+table+'.txt'
     with open(filename,'w') as file:
         file.write("|".join((str(cur[0]) for cur in cursor.description))+'\n')
-        for row in rows:
-            file.write("|".join((str(i) for i in row))+'\n')
+        file.write("".join("|".join(map(str,row))+'\n' for row in rows))
 
 #divide and conquer
 def merge(conn,tables,folderName,left,right,table_idx,threads):
@@ -48,7 +54,9 @@ def merge(conn,tables,folderName,left,right,table_idx,threads):
 
 #generate for all TABLES
 def generateForAll(conn,dbName,folderName):
-    tables = list_of_tables(conn,dbName)
+    print("if you want all tables-> input 'ALL'")
+    no_of_tables = input("Enter the number of tables to fetch:")
+    tables = list_of_tables(conn,dbName,no_of_tables)
     table_idx = set()
     threads = []
     merge(conn,tables,folderName,0,len(tables)-1,table_idx,threads)
