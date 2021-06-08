@@ -2,7 +2,7 @@ import os
 import time
 import sys
 import pyodbc #for mssql connection with python
-#sqlcmd -s"|" -W -Q "set nocount on; select * from [dbTemp].[dbo].[tblAuthors]" | findstr /v /c:"-" /b > "Desktop\tblAuthors.csv"
+
 #connect db
 def connect(dbName):
     try:
@@ -14,6 +14,7 @@ def connect(dbName):
         print("Connection error! Check dbName")
         sys.exit()
     return conn
+
 #get table names
 def list_of_tables(conn,dbName):
     try:
@@ -40,7 +41,6 @@ def generateForAll():
     for table in tables:
         statement = 'sqlcmd -s"|" -W -Q "set nocount on; select * from [' + dbName + '].['+schema+'].['+table+']" | findstr /v /c:"-" /b > "'+table+'.csv"'
         os.system(statement)
-        print(statement)
     e = time.time()
     print("Time taken(secs): ",e-s)
 
